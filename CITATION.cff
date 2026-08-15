@@ -6,10 +6,10 @@ message: If you use this software or data, please cite it as below.
 type: software
 authors:
   - given-names: Taran
-    family-names: SURNAME
+    family-names: Douley
     affiliation: Shroud Labs Limited
-    orcid: 'https://orcid.org/0000-0000-0000-0000'
-repository-code: 'https://github.com/USERNAME/ungrounded'
+    orcid: 'https://orcid.org/0009-0002-3673-4500'
+repository-code: 'https://github.com/ShroudLabs/ungrounded'
 abstract: >-
   Harnesses, raw per-trial data and analysis for four studies
   (13,470 trials, six models, two vendors) measuring spurious
