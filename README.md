@@ -4,7 +4,7 @@
 
 Four studies, 13,470 trials, six models, two vendors. Harnesses, raw per-trial data, and analysis scripts.
 
-📄 Preprint: [`paper/preprint.md`](paper/preprint.md) · DOI: [pending]
+📄 Preprint: [`paper/preprint.md`](paper/preprint.md) · DOI: 10.5281/zenodo.21958704
 🔬 Full record: [`docs/MASTER_BRIEFING.md`](docs/MASTER_BRIEFING.md)
 
 ---
