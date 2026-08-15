@@ -210,7 +210,7 @@ A third hypothesis, that invocation scales with model capability (Study 3: Sonne
 
 ## 8. Availability
 
-Harnesses, per-trial raw data for all four studies, and analysis scripts: [GitHub URL]
+Harnesses, per-trial raw data for all four studies, and analysis scripts:(https://github.com/ShroudLabs/ungrounded-agents/blob/main/paper/preprint.md)
 Archived release: [Zenodo DOI]
 
 All runs are resumable and deterministically seeded at the registry-ordering level.
