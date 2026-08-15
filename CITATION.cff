@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: >-
+  Ungrounded: Entity Grounding Failure Drives Spurious
+  Internal-Tool Invocation in LLM Agents
+message: If you use this software or data, please cite it as below.
+type: software
+authors:
+  - given-names: Taran
+    family-names: SURNAME
+    affiliation: Shroud Labs Limited
+    orcid: 'https://orcid.org/0000-0000-0000-0000'
+repository-code: 'https://github.com/USERNAME/ungrounded'
+abstract: >-
+  Harnesses, raw per-trial data and analysis for four studies
+  (13,470 trials, six models, two vendors) measuring spurious
+  decoy-tool invocation by benign LLM agents, and identifying
+  entity grounding failure as the driving mechanism.
+keywords:
+  - LLM agents
+  - Model Context Protocol
+  - deception technology
+  - canary tokens
+  - tool selection
+  - agent security
+license: MIT
+date-released: '2026-08-15'
