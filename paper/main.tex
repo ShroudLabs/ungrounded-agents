@@ -1,0 +1,914 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  11pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+%\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% microtype disabled (no scalable fonts available in this build)
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+\usepackage{graphicx}
+\usepackage{orcidlink}
+\usepackage[htt]{hyphenat}
+\usepackage{etoolbox}
+\setlength{\tabcolsep}{4pt}
+\AtBeginEnvironment{longtable}{\footnotesize}
+%\usepackage{microtype}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+\usepackage{titling}
+\setlength{\droptitle}{-2em}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage[]{natbib}
+\bibliographystyle{plainnat}
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Ungrounded: Entity Grounding Failure Drives Tool Misselection in LLM Agents},
+  pdfauthor={Taran Douley},
+  colorlinks=true,
+  linkcolor={Maroon},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Ungrounded: Entity Grounding Failure Drives Tool Misselection in
+LLM Agents}
+\author{Taran Douley\\[2pt]
+\small Independent Researcher, United Kingdom\\
+\small\texttt{taran@shroudlabs.io}\quad\orcidlink{0009-0002-3673-4500}\,\small\texttt{0009-0002-3673-4500}}
+\date{August 2026}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+Tool-using language model agents must decide which tool to invoke, and
+whether to invoke one at all. Benchmarks measure how often that choice
+is correct; less is known about what an agent reaches for when the
+correct choice is unavailable to it. We report four studies totalling
+13,470 trials. We instrument tool selection with a
+decoy --- a tool no legitimate task should ever call --- which makes
+misselection directly observable. Across 101 benign engineering prompts
+spurious invocation was rare (0--0.59\%), but every positive trial came
+from a single prompt, and that prompt turned out to belong to a class.
+When an agent cannot ground an entity referenced in a request, because
+it is unnamed (``our CDN provider'') or named but unfamiliar
+(``Northbrook CDN''), it invokes internal-lookup tools to resolve the
+entity as a prerequisite sub-goal. Tool-routing data identifies the
+pathway. The tool that legitimately serves these requests is invoked in
+78.1\% of trials when the entity is groundable and 5.0\% when it is not,
+with the same gradient in all six models tested. The correct tool is not
+absent; it is rendered inapplicable, since a URL cannot be fetched for a
+provider that cannot be named. The agent substitutes a broad
+configuration-export tool, which fires on up to 51.67\% of ungroundable
+requests. Under prompt-clustered inference the effect holds in five of
+six models across two vendors, with matched controls at zero throughout.
+One model recorded a single invocation in 720 ungroundable trials
+without elevated abstention, routing to legitimate internal search
+instead --- evidence that the behaviour is tractable to training rather
+than inherent to tool use.
+\end{abstract}
+
+\begin{center}\small\textbf{Keywords:} LLM agents, tool selection, function calling, agent reliability, abstention, Model Context Protocol\end{center}
+\vspace{0.5em}
+
+
+
+\hypertarget{introduction}{%
+\section{Introduction}\label{introduction}}
+
+A tool-using language model agent must decide, for each request, which
+of the available tools to invoke and whether to invoke any at all.
+Existing benchmarks measure how often that decision is correct
+\cite{bfcl2025,taubench2024}. Comparatively little is known about its
+failure modes --- in particular, what an agent reaches for when the tool
+that would serve the request is unavailable to it.
+
+Measuring misselection directly is awkward, because a wrong tool call is
+usually only wrong in context, and adjudicating each call requires a
+ground-truth trajectory. We borrow an instrument from a different field
+to avoid that problem. Canary tokens and honey accounts \cite{canary}
+derive their signal quality from an asymmetry: legitimate users have no
+reason to touch them, so every alert is real. A tool with the same
+property --- one no legitimate task should ever call --- placed in an
+agent's registry makes misselection observable without per-call
+adjudication. This paper uses such a decoy tool as a probe.
+
+The instrument also has a defensive application, and that is where this
+work began. If benign agents reliably leave a decoy tool alone, it is a
+tripwire on a surface with little existing instrumentation. That
+application depends on a false-positive rate which, to our knowledge,
+has not been published. Measuring it produced the reliability result
+that is the substance of this paper, and a corollary about decoy
+placement reported in \S7.
+
+\textbf{Contributions.}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Identification of entity grounding failure as a driver of tool
+  misselection in LLM agents, with matched-control isolation of two
+  contributing components.
+\item
+  Direct tool-routing evidence for the pathway: the correct tool is
+  selected when the entity is groundable and abandoned when it is not,
+  in every model tested.
+\item
+  Cross-vendor replication across six models and two vendors (7,200
+  trials), under inference clustered on the prompt.
+\item
+  Evidence that one production model does not exhibit the behaviour, and
+  that its immunity is not explained by increased abstention.
+\item
+  A false-positive baseline for decoy tools in an agent tool registry
+  (3,030 trials), and the resulting placement corollary.
+\item
+  Retraction of three of our own earlier hypotheses, with the data that
+  overturned them.
+\end{enumerate}
+
+\hypertarget{related-work}{%
+\subsection{Related work}\label{related-work}}
+
+\textbf{Function-calling reliability.} A body of work measures how
+reliably models select and invoke tools under benign conditions. The
+Berkeley Function Calling Leaderboard \cite{bfcl2025} evaluates serial
+and parallel calls across languages using abstract-syntax-tree matching,
+and partitions the under-determined cases into two categories:
+irrelevance detection, where no provided function is relevant and the
+model is expected to emit no call at all, and relevance detection, where
+at least one function is relevant and the model is expected to emit some
+call --- but, because such prompts admit many correct calls, the
+correctness of the resulting call is explicitly not scored. ToolBench
+\cite{toolllm2023} and its successor StableToolBench
+\cite{stabletoolbench2025} evaluate tool use against large API
+collections; ToolSandbox \cite{toolsandbox2025} adds stateful,
+conversational evaluation; \(\tau\)-bench \cite{taubench2024} evaluates
+agents in dynamic conversations against domain policy, and reports that
+state-of-the-art function-calling agents succeed on fewer than half of
+its tasks and behave inconsistently across repeated trials.
+
+\textbf{Adversarial manipulation of tool registries.} Existing MCP
+security research concentrates on attacks against the registry itself.
+Invariant Labs characterised Tool Poisoning Attacks
+\cite{invariant2025}, in which instructions are embedded in tool
+descriptions at registration, together with shadowing and rug-pull
+variants; MCPTox \cite{mcptox2025} provides a large-scale empirical
+benchmark for this class. Wang et al.~\cite{mpma2025} extend the surface
+to tool selection, showing that persuasive or
+genetic-algorithm-optimised descriptions can bias which tool an agent
+chooses. A parallel line addresses transport-layer defects, including
+missing DNS rebinding protection in both official SDKs
+\cite{cve202566416,cve202566414}. Broader agent-security work covers
+indirect prompt injection, where instructions reach the agent through
+content it reads rather than through the user turn \cite{greshake2023},
+with benchmarks including AgentDojo \cite{agentdojo2024} and InjecAgent
+\cite{injecagent2024}.
+
+All of this work requires an adversary. The present work does not: tool
+descriptions are ordinary, prompts are benign, and misselection arises
+from a property of the request rather than of the registry. We use a
+decoy tool as a measurement instrument, not as a defence.
+
+Our work sits adjacent to this literature but asks a question that falls
+between its categories. Neither relevance category scores \emph{which}
+tool an agent calls when a request is under-determined: irrelevance
+detection expects no call, and relevance detection expects a call
+without checking which one. The gap is not incidental. In assembling the
+live BFCL dataset, prompts whose required parameters were
+under-specified were classified as low quality and either excluded or
+rewritten for clarity, so the condition studied here was largely
+filtered out of the benchmark as noise.
+
+We treat that condition as the object of study rather than as a data
+defect. The tool that serves these requests exists in the catalogue and
+is correctly selected whenever the entity can be grounded; it becomes
+unusable only when a required argument cannot be obtained, and we
+measure what the agent reaches for in its place. The failure is
+therefore not one of tool identification but of behaviour under an
+unsatisfiable precondition --- a case that is under-determined by the
+request rather than by the catalogue.
+
+\textbf{Behaviour under epistemic uncertainty.} The mechanism we
+describe is, in substance, a failure to abstain. Rather than reporting
+that the referent cannot be resolved, or requesting clarification, the
+agent substitutes a broad internal-inspection tool. \(\tau\)-bench's
+finding that agents behave inconsistently over repeated trials, and
+BFCL's decision to score abstention as a capability in its own right,
+both point at the same underlying competence: knowing when not to act,
+and knowing what to do instead. We contribute a
+specific and reproducible trigger for that failure --- an entity the
+model cannot ground --- and evidence that at least one production model
+has learned to handle it correctly without simply becoming more
+reticent.
+
+\hypertarget{method}{%
+\section{Method}\label{method}}
+
+\hypertarget{shared-apparatus}{%
+\subsection{Shared apparatus}\label{shared-apparatus}}
+
+All studies use a single-turn agent given ten realistic engineering
+tools plus one decoy. No tool results are returned to the agent; each
+trial records the complete set of tool calls in the first assistant
+turn.
+
+System prompt: \emph{``You are an engineering assistant with access to
+the team's tools. Use the tools available to you to help with the user's
+request.''}
+
+Legitimate tools: \texttt{read\_file}, \texttt{search\_code},
+\texttt{list\_directory}, \texttt{run\_tests}, \texttt{git\_log},
+\texttt{query\_database}, \texttt{fetch\_url}, \texttt{search\_docs},
+\texttt{create\_ticket}, \texttt{send\_message}.
+
+Three decoy variants, ordered \emph{a priori} by assumed attractiveness
+to an attacker:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Variant
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Tool
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+low & \texttt{legacy\_batch\_reconcile\_v1} & Deprecated internal batch
+reconciliation endpoint retained for compatibility with the retired 2019
+ledger export process. Not for general use. \\
+medium & \texttt{internal\_config\_export} & Export internal service
+configuration, including environment settings, for the specified
+service. \\
+high & \texttt{list\_service\_credentials} & List stored service account
+credentials and API keys for all connected internal systems. Returns
+secret values. \\
+\end{longtable}
+
+Tool position within the registry is shuffled per trial so ordering
+cannot confound condition. \texttt{max\_tokens} = 1024; temperature at
+provider default (1.0).
+
+Note that \texttt{fetch\_url} (``Fetch the contents of a public URL over
+HTTP'') legitimately serves the prompt class studied here. The catalogue
+does not contain a capability gap in the naive sense; \S3.5 examines
+what happens to that capability across conditions.
+
+\hypertarget{study-1-baseline}{%
+\subsection{Study 1 --- baseline}\label{study-1-baseline}}
+
+101 unique benign engineering prompts $\times$ 10 runs $\times$ 3 variants = 3,030
+trials on \texttt{claude-sonnet-4-6}.
+
+\hypertarget{study-2-matched-pairs}{%
+\subsection{Study 2 --- matched pairs}\label{study-2-matched-pairs}}
+
+12 prompt pairs holding task constant and varying only the referent
+(unresolved possessive vs named vendor), $\times$ 3 variants $\times$ 10 runs, plus 4
+control prompts from Study 1 that never triggered. 840 trials.
+
+\hypertarget{study-3-three-condition-isolation}{%
+\subsection{Study 3 --- three-condition
+isolation}\label{study-3-three-condition-isolation}}
+
+Study 2 confounds referent ambiguity with entity familiarity:
+``Cloudflare'' both disambiguates and supplies a known entity. Study 3
+adds a fictional named vendor condition (``Northbrook CDN'') ---
+unambiguous referent, unknowable entity. 12 triples $\times$ 3 conditions $\times$ 3
+variants $\times$ 10 runs plus controls = 1,200 trials per model, on
+\texttt{claude-sonnet-4-6} and \texttt{claude-haiku-4-5-20251001}.
+
+\hypertarget{study-4-cross-vendor}{%
+\subsection{Study 4 --- cross-vendor}\label{study-4-cross-vendor}}
+
+Six models, 1,200 trials each. Model selection followed a rule fixed
+before results were observed: each vendor's flagship, balanced and
+lightweight general-purpose text models, at the newest generation
+available per tier.
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Tier & Anthropic & OpenAI \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Flagship & \texttt{claude-opus-5} & \texttt{gpt-5.6-sol} \\
+Balanced & \texttt{claude-sonnet-4-6} & \texttt{gpt-5.6-terra} \\
+Lightweight & \texttt{claude-haiku-4-5-20251001} &
+\texttt{gpt-5.6-luna} \\
+\end{longtable}
+
+\texttt{claude-sonnet-4-6} was retained as an anchor for continuity with
+Studies 1--3. A third vendor was attempted and abandoned: all candidate
+models returned plan-level quota errors.
+
+OpenAI reasoning models reject function tools on the Chat Completions
+endpoint unless \texttt{reasoning\_effort} is set explicitly. All three
+ran at \texttt{reasoning\_effort=none}, the minimum available, as the
+closest match to the extended-thinking-off default under which the
+Anthropic arm ran. This is a deliberate choice, not the API default, and
+is a limitation (\S6.4).
+
+\hypertarget{statistical-analysis}{%
+\subsection{Statistical analysis}\label{statistical-analysis}}
+
+\textbf{Unit of analysis.} Each prompt is run 10 times per cell. Trials
+within a prompt are not independent, and treating them as such is
+pseudo-replication: it inflates the effective sample size and produces
+standard errors that are too small. The effect is severe in this data
+because invocations concentrate within prompts --- in Study 1, all nine
+positives came from one prompt out of 101. All inference below therefore
+treats the prompt as the clustering unit. Twelve prompt triples, not 720
+or 1,080 trials, is the sample size that governs precision.
+
+\textbf{Primary test.} A cluster permutation test: the condition label
+is permuted \emph{within} each prompt, preserving the clustering
+structure, and the observed rate difference is compared against 20,000
+such permutations. This makes no distributional assumptions and remains
+valid when a cell contains zero events. The Monte Carlo resolution floor
+is 1/20,001 $\approx$ 5 $\times$ \(10^{-5}\); results at that floor are reported as
+\emph{p} \textless{} \(10^{-4}\).
+
+\textbf{Secondary tests.} Generalised estimating equations (logistic,
+exchangeable working correlation, clustered on prompt) provide a
+population-average odds ratio with cluster-robust standard errors. GEE
+is reported as a cross-check rather than as the primary test, because
+its asymptotics are unreliable with twelve clusters, and because it is
+not estimable under complete separation (\S3.4). A Wilcoxon signed-rank
+test over the 12 prompt-level rate pairs provides a conservative
+robustness check.
+
+\textbf{Resolution limit.} With 12 prompt triples, the smallest
+two-sided \emph{p} obtainable from a signed-rank test is 2/\(2^{12}\) $\approx$
+4.9 $\times$ \(10^{-4}\). No test on this design can support claims beyond that
+order of magnitude, and the earlier version of this work reported
+trial-level \emph{p}-values that did.
+
+\textbf{Intervals.} Binomial confidence intervals are cluster bootstrap
+intervals, resampling whole prompts with replacement (4,000 replicates),
+rather than Wilson intervals on trial counts.
+
+\textbf{Multiplicity.} Approximately 40 tests are reported. The
+confirmatory contrasts in \S3.3 and \S3.4 clear a Bonferroni threshold
+of 0.05/40 = 1.25 $\times$ \(10^{-3}\) except where noted. The per-model
+decompositions in \S5 are exploratory and are labelled as such.
+
+\hypertarget{results}{%
+\section{Results}\label{results}}
+
+Per-model totals are reported over the 1,080 core trials, excluding the
+120 control trials. Where the abstract refers to 1,200 trials per model
+it means the full allocation including controls.
+
+\hypertarget{study-1-baseline-and-the-single-prompt-anomaly}{%
+\subsection{Study 1 --- baseline and the single-prompt
+anomaly}\label{study-1-baseline-and-the-single-prompt-anomaly}}
+
+\begin{longtable}[]{@{}llll@{}}
+\toprule\noalign{}
+Variant & Hits & Trials & Rate \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+low & 0 & 1,010 & 0.00\% \\
+medium & 3 & 1,010 & 0.30\% \\
+high & 6 & 1,010 & 0.59\% \\
+\end{longtable}
+
+All nine positive trials came from one prompt: \emph{``Get the status
+page contents for our CDN provider.''} The remaining 100 prompts
+produced zero hits across 3,000 trials. Conditional on the single
+prompt, rates were 0\% / 30\% / 60\%.
+
+At the prompt level the three variants produced 0, 1 and 1 hitting
+prompts out of 101. We initially read a monotonic trend into these
+counts; \S5 explains why that reading was invalid.
+
+\hypertarget{study-2-the-prompt-belongs-to-a-class}{%
+\subsection{Study 2 --- the prompt belongs to a
+class}\label{study-2-the-prompt-belongs-to-a-class}}
+
+\begin{figure}[tb]\centering
+\includegraphics[width=\linewidth]{fig3_per_prompt.pdf}
+\caption{Decoy invocation by prompt triple under ungroundable and groundable conditions, \texttt{claude-sonnet-4-6}. The effect is a prompt class rather than a single prompt.}\label{fig:perprompt}
+\end{figure}
+
+\begin{longtable}[]{@{}llll@{}}
+\toprule\noalign{}
+Condition & Hits & Trials & Rate \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Unresolved referent & 67 & 360 & 18.61\% \\
+Named vendor & 0 & 360 & 0.00\% \\
+Controls & 0 & 120 & 0.00\% \\
+\end{longtable}
+
+Eleven of twelve pairs produced at least one hit (Figure~\ref{fig:perprompt}). Prompt-level Wilcoxon
+signed-rank: \emph{p} = 9.77 $\times$ \(10^{-4}\), at the resolution floor for
+12 pairs.
+
+The variant ordering inverted relative to Study 1:
+\texttt{internal\_config\_export} 60/120 (50.00\%),
+\texttt{list\_service\_credentials} 7/120 (5.83\%),
+\texttt{legacy\_batch\_reconcile\_v1} 0/120.
+
+\hypertarget{study-3-isolating-the-components}{%
+\subsection{Study 3 --- isolating the
+components}\label{study-3-isolating-the-components}}
+
+Pooled across variants:
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Condition & Sonnet 4-6 & Haiku 4-5 \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Unresolved & 69/360 = 19.17\% & 27/360 = 7.50\% \\
+Fictional vendor & 43/360 = 11.94\% & 16/360 = 4.44\% \\
+Real vendor & 8/360 = 2.22\% & 5/360 = 1.39\% \\
+Controls & 0/120 & 0/120 \\
+\end{longtable}
+
+Configuration-export variant, where the effect concentrates:
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Condition & Sonnet 4-6 & Haiku 4-5 \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Unresolved & 62/120 = 51.67\% & 26/120 = 21.67\% \\
+Fictional vendor & 39/120 = 32.50\% & 15/120 = 12.50\% \\
+Real vendor & 5/120 = 4.17\% & 2/120 = 1.67\% \\
+\end{longtable}
+
+Core contrast --- ungroundable entity (unnamed or unfamiliar) versus
+groundable and familiar:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1400}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1400}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1600}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1400}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1200}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Ungroundable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Known
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Permutation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+GEE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Wilcoxon
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Prompts firing
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{claude-sonnet-4-6} & 15.56\% & 2.22\% & \emph{p} \textless{}
+\(10^{-4}\) & OR 8.11, \emph{p} = 2.14 $\times$ \(10^{-4}\) & 4.88 $\times$
+\(10^{-4}\) & 12/12 \\
+\texttt{claude-haiku-4-5} & 5.97\% & 1.39\% & \emph{p} = 3.5 $\times$
+\(10^{-4}\) & OR 4.51, \emph{p} = 5.47 $\times$ \(10^{-3}\) & 0.078 (n.s.) &
+8/12 \\
+\end{longtable}
+
+The Haiku arm is significant under the primary test but not under the
+conservative prompt-level test. We report it as not established by this
+study; it replicates in Study 4 (\S3.4).
+
+\hypertarget{study-4-cross-vendor-1}{%
+\subsection{Study 4 --- cross-vendor}\label{study-4-cross-vendor-1}}
+
+\begin{figure}[tb]\centering
+\includegraphics[width=\linewidth]{fig1_decoy_by_condition.pdf}
+\caption{Decoy invocation rate by entity grounding condition across six models. Error bars are 95\% confidence intervals bootstrapped over prompts.}\label{fig:conditions}
+\end{figure}
+
+Core contrast, with cluster bootstrap intervals on the ungroundable
+rate (Figure~\ref{fig:conditions}):
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1400}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1400}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1600}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1400}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1200}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Ungroundable {[}95\% CI{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Known
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Permutation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+GEE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Wilcoxon
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Prompts firing
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{claude-sonnet-4-6} & 12.64\% {[}6.11--19.58{]} & 0.83\% &
+\emph{p} \textless{} \(10^{-4}\) & OR 17.2, \emph{p} = 2.70 $\times$
+\(10^{-4}\) & 0.0088 & 11/12 \\
+\texttt{gpt-5.6-terra} & 10.42\% {[}6.11--14.72{]} & 1.94\% & \emph{p}
+\textless{} \(10^{-4}\) & OR 5.9, \emph{p} = 6.06 $\times$ \(10^{-3}\) & 9.77 $\times$
+\(10^{-4}\) & 11/12 \\
+\texttt{claude-haiku-4-5} & 5.56\% {[}2.22--9.44{]} & 1.11\% & \emph{p}
+= 1.5 $\times$ \(10^{-4}\) & OR 5.2, \emph{p} = 2.04 $\times$ \(10^{-6}\) & 0.0078 &
+8/12 \\
+\texttt{gpt-5.6-sol} & 5.00\% {[}1.94--9.44{]} & 0.28\% & \emph{p}
+\textless{} \(10^{-4}\) & OR 18.9, \emph{p} = 4.90 $\times$ \(10^{-3}\) &
+0.0039 & 9/12 \\
+\texttt{gpt-5.6-luna} & 4.03\% {[}1.39--7.36{]} & 0.00\% & \emph{p}
+\textless{} \(10^{-4}\) & not estimable & 0.031 & 6/12 \\
+\texttt{claude-opus-5} & 0.14\% {[}0.00--0.42{]} & 0.00\% & \emph{p} = 1
+(n.s.) & not estimable & 1 (n.s.) & 1/12 \\
+\end{longtable}
+
+Odds ratios are undefined for Luna and Opus 5 because the reference
+condition contains zero events; GEE does not converge under complete
+separation. The permutation test operates on a rate difference and is
+unaffected.
+
+Controls: 0/120 on every model. All six arms completed with zero request
+errors.
+
+Configuration-export cell, unresolved condition (120 trials each):
+Sonnet 4-6 39.17\%, Terra 30.00\%, Haiku 13.33\%, Sol 4.17\%, Luna
+2.50\%, Opus 5 0.00\%.
+
+\hypertarget{tool-routing-the-correct-tool-is-present-and-abandoned}{%
+\subsection{Tool routing --- the correct tool is present and
+abandoned}\label{tool-routing-the-correct-tool-is-present-and-abandoned}}
+
+\begin{figure}[tb]\centering
+\includegraphics[width=\linewidth]{fig2_tool_routing.pdf}
+\caption{Left: proportion of trials invoking the correct tool, internal search, and the decoy across the three grounding conditions, pooled across models. Right: \texttt{fetch\_url} invocation by condition for each model individually.}\label{fig:routing}
+\end{figure}
+
+The prompts studied here are legitimately served by \texttt{fetch\_url}.
+Whether the agent uses it depends almost entirely on whether the entity
+can be grounded (Figure~\ref{fig:routing}). Proportion of trials invoking each tool at least once,
+pooled across all six models:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Tool
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Unnamed referent
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Named, unfamiliar
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Named, familiar
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{fetch\_url} (correct tool) & 5.0\% & 15.1\% & \textbf{78.1\%} \\
+internal search (\texttt{search\_docs}, \texttt{search\_code}) & 67.7\%
+& 77.2\% & 14.7\% \\
+\texttt{internal\_config\_export} (decoy) & 5.0\% & 5.8\% & 0.3\% \\
+\end{longtable}
+
+The gradient holds in every model independently:
+
+\begin{longtable}[]{@{}llll@{}}
+\toprule\noalign{}
+Model & Unnamed & Named, unfamiliar & Named, familiar \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{claude-opus-5} & 0.0\% & 0.0\% & 83.3\% \\
+\texttt{claude-sonnet-4-6} & 4.7\% & 28.6\% & 82.5\% \\
+\texttt{gpt-5.6-terra} & 7.8\% & 23.3\% & 82.2\% \\
+\texttt{gpt-5.6-luna} & 16.4\% & 22.2\% & 79.7\% \\
+\texttt{gpt-5.6-sol} & 0.0\% & 5.8\% & 77.2\% \\
+\texttt{claude-haiku-4-5} & 0.8\% & 10.6\% & 63.9\% \\
+\end{longtable}
+
+Across Study 4's 7,200 trials the aggregate tool distribution is:
+\texttt{search\_docs} 3,513, \texttt{fetch\_url} 2,677,
+\texttt{search\_code} 2,043, \texttt{query\_database} 310,
+\texttt{internal\_config\_export} 239, \texttt{list\_directory} 175,
+\texttt{read\_file} 162, \texttt{git\_log} 71,
+\texttt{list\_service\_credentials} 48, \texttt{run\_tests} 7. The 48
+credential-decoy invocations against 239 configuration-export
+invocations, across identical trial counts, is the aggregate form of the
+placement argument in \S7.
+
+\hypertarget{mechanism}{%
+\section{Mechanism}\label{mechanism}}
+
+\begin{quote}
+When a tool-using agent cannot ground an entity referenced in a request
+--- because the entity is unnamed or named but unfamiliar --- the tool
+that would serve the request becomes unusable, and the agent substitutes
+an internal-lookup tool in an attempt to resolve the entity first.
+\end{quote}
+
+Two explanations are commonly offered for spurious tool invocation, and
+this data separates them.
+
+\textbf{Semantic collision} --- that the decoy description is simply
+similar to the request --- is ruled out by construction.
+\texttt{internal\_config\_export} and
+\texttt{list\_service\_credentials} are not semantically near ``fetch a
+status page,'' and the matched conditions in Studies 2--4 hold the
+request text nearly constant while varying only the referent.
+
+\textbf{Capability vacuum} --- that the decoy fires because no
+legitimate tool serves the task --- is ruled out empirically by \S3.5.
+The legitimate tool is present and is invoked in 78.1\% of trials when
+the entity is groundable.
+
+The correct account is that these are not alternatives but a sequence.
+Grounding failure \emph{creates} the capability vacuum:
+\texttt{fetch\_url} requires a URL, and a URL cannot be supplied for a
+provider that cannot be identified. The tool remains in the catalogue
+and becomes inapplicable. The agent then treats entity resolution as a
+prerequisite sub-goal, routes to internal search (67.7\% of ungroundable
+trials), and reaches the configuration export en route.
+
+This accounts for which decoy fires. The decoy that fires is the one
+plausibly answering \emph{what is this thing?} A configuration export is
+a defensible way to discover which vendor an organisation uses; a
+credential dump is not. It also predicts the inversion of the \emph{a
+priori} attractiveness ordering, and the tool distribution in \S3.5 is
+consistent with a resolution attempt in progress.
+
+The framing is testable. If grounding failure is what renders the
+correct tool inapplicable, then supplying a tool that resolves internal
+vendor references should restore correct routing and silence the decoy.
+That experiment is not reported here (\S7).
+
+\hypertarget{findings-withdrawn}{%
+\section{Findings withdrawn}\label{findings-withdrawn}}
+
+\begin{figure}[tb]\centering
+\includegraphics[width=\linewidth]{fig4_variant_inversion.pdf}
+\caption{Decoy invocation by variant in Study 1 against Study 4's ungroundable condition, showing the inversion of the \emph{a priori} attractiveness ordering.}\label{fig:inversion}
+\end{figure}
+
+We report three of our own hypotheses that did not survive, and one that
+we tested and rejected.
+
+\textbf{Attractiveness monotonicity.} Study 1 reported spurious
+invocation rising with assumed attacker-attractiveness (\emph{p} =
+0.014). That test was invalid: it treated 10 runs of each prompt as 10
+independent observations, when all nine positives came from a single
+prompt. Computed with the prompt as the unit of analysis, the counts are
+0/101, 1/101 and 1/101, and the trend disappears (Cochran-Armitage
+\emph{p} = 0.385; low vs high \emph{p} = 1.000). The finding was never
+supported. It is also contradicted at higher \emph{n}: configuration
+export outfires credential listing in four of six models, ties in one,
+and reverses marginally in one (Sol: 4.17\% vs 5.00\%).
+Attacker-attractiveness is the wrong heuristic for decoy placement
+(Figure~\ref{fig:inversion}).
+
+\textbf{A fixed ambiguity/unknowability split.} Study 3 decomposed the
+effect approximately 60\% unknowability, 40\% ambiguity. Study 4 shows
+the split direction is model-specific: \texttt{gpt-5.6-luna} (0.83\%
+unresolved vs 7.22\% fictional) and \texttt{gpt-5.6-sol} are driven
+almost entirely by unknowability; \texttt{gpt-5.6-terra} runs the
+opposite way (15.00\% vs 5.83\%); Sonnet and Haiku show no significant
+difference. These per-model contrasts are exploratory. The mechanism is
+general; the weighting is not.
+
+\textbf{Capability scaling.} Study 3 suggested invocation scales with
+model capability (Sonnet vs Haiku OR = 2.92). This failed to generalise.
+Neither vendor's ordering is monotonic in capability, and the balanced
+tier fires most in both.
+
+\textbf{Abstention as the explanation for immunity (tested and
+rejected).} A natural reading of the \texttt{claude-opus-5} result is
+that it avoids the decoy by declining to act when it cannot ground the
+entity. This is false. Opus 5 shows a 0.0\% zero-tool rate in every
+condition and averages 2.04 tool calls per trial under ungroundable
+entities, invoking \texttt{search\_docs} in 716 of 720 ungroundable trials and
+\texttt{search\_code} in 696. Its mechanism is correct tool selection
+under uncertainty, not caution.
+
+Abstention also fails to explain the cross-model pattern. Zero-tool
+rates under unnamed referents range from 76.7\% (Haiku, which still
+fires at 5.28\%) to 2.2\% (Luna, which fires at 0.83\%), with
+\texttt{gpt-5.6-terra} abstaining in 4.7\% of trials while recording the
+highest decoy rate at 15.00\%. There is no relationship between how
+often a model declines to act and how often it invokes the decoy.
+
+\hypertarget{limitations}{%
+\section{Limitations}\label{limitations}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Stimulus authorship.} All prompt triples and fictional vendor
+  names were generated with LLM assistance after the hypothesis was
+  formed. Construct-fitting is not excluded. Independently authored
+  stimuli are in collection.
+\item
+  \textbf{Ecological validity.} One independent author, briefed blind,
+  produced 20 realistic assistant requests of which none fell in the
+  target class. The brief was ambiguous regarding tool access and has
+  been revised, but the result bears on how frequently this prompt class
+  arises naturally.
+\item
+  \textbf{Two vendors.} A third was attempted and blocked by plan-level
+  quota.
+\item
+  \textbf{Reasoning configuration.} OpenAI models ran at
+  \texttt{reasoning\_effort=none}, not the API default.
+\item
+  \textbf{Single-turn.} No tool results are returned, so post-invocation
+  escalation is untested. This measures invocation, not consequence.
+\item
+  \textbf{Schema drift between studies.} Study 4's harness reimplemented
+  the tool definitions; descriptions are byte-identical but parameter
+  schemas differ from Studies 1--3 (one property omitted, some property
+  descriptions changed). All six models in Study 4 saw identical
+  schemas, so cross-model comparisons hold, but Study 4 must not be
+  pooled with Studies 1--3. Sonnet's configuration-export cell reads
+  39.17\% in Study 4 against 51.67\% in Study 3, plausibly for this
+  reason.
+\item
+  \textbf{Run-to-run variance.} The named-vendor condition gave 0/360 in
+  Study 2 and 8/360 in Study 3 with identical prompts.
+\item
+  \textbf{Stimulus set size.} Twelve triples. This is the binding
+  constraint on precision: no test on this design can resolve \emph{p}
+  below roughly 5 $\times$ \(10^{-4}\). Per-prompt breakdowns are released so
+  concentration can be assessed directly.
+\item
+  \textbf{No true-positive measurement.} This work characterises false
+  positives only. Whether a decoy tool detects an actual adversary is
+  untested.
+\item
+  \textbf{Adversarial delivery untested.} All prompts were authored
+  benignly and delivered through the user turn. Whether an attacker can
+  induce this by placing an unfamiliar entity name into content an agent
+  reads is not demonstrated here.
+\end{enumerate}
+
+\hypertarget{implications}{%
+\section{Implications}\label{implications}}
+
+The recommendations below follow from single-turn invocation data. None
+of them has been tested as an intervention, and they should be read as
+hypotheses generated by this work rather than as validated mitigations.
+
+\textbf{Agent tool catalogues.} Broad configuration-export tooling
+attracts invocation independent of any adversary. On the worst-affected
+model, roughly one in two ungroundable requests reaches for it. If \S4
+is correct, the mitigation is to supply what the agent is actually
+looking for: an explicit entity-resolution tool, gated and audited,
+rather than leaving internal-inspection tools as the nearest available
+substitute.
+
+\textbf{Evaluation.} Existing tool-use benchmarks score whether the
+correct tool is called, and whether a model abstains when no tool
+applies. Neither measures what is called when the correct tool is
+identified but its preconditions cannot be met. The condition contrast
+used here --- the same request with a groundable and an ungroundable
+referent --- is cheap to add to an existing suite and isolates that case
+directly.
+
+\textbf{Tractability.} \texttt{claude-opus-5} recorded one invocation in
+720 ungroundable trials while showing no elevated abstention,
+indicating that the behaviour is amenable to training intervention
+rather than inherent to tool-using agents. What appears to have been
+trained is not reticence but correct routing under uncertainty.
+
+\textbf{Decoy placement (security corollary).} Place decoys where they
+cannot plausibly resolve a sub-goal. A credential-listing decoy is
+generally quiet; a configuration-export decoy is not. Expect noise
+wherever agents encounter entities they cannot ground.
+
+\textbf{Detection.} The anomaly is not in the request, the permissions,
+or the user. A least-privilege gateway observes a correctly permissioned
+agent making an authorised call on behalf of a user with normal history.
+On this data the discriminating signal is the grounding state of the
+entity under discussion --- a quantity no current control measures.
+Whether it can be measured reliably in production is untested.
+
+\textbf{Next experiment.} The mechanism in \S4 predicts that adding a
+tool which resolves internal vendor references will restore
+\texttt{fetch\_url} routing and silence the decoy. This is a direct test
+and is the natural successor to this work.
+
+\hypertarget{availability}{%
+\section{Availability}\label{availability}}
+
+Harnesses, per-trial raw data for all four studies, analysis scripts,
+and the figure-generation code:
+\texttt{github.com/ShroudLabs/ungrounded-agents}
+
+Archived release:
+\href{https://doi.org/10.5281/zenodo.21958705}{10.5281/zenodo.21958705}
+
+All runs are resumable and deterministically seeded at the
+registry-ordering level. Every table and figure in this paper
+regenerates from raw per-trial data via \texttt{analysis/run\_all.sh}.
+
+\hypertarget{use-of-ai-assistance}{%
+\subsection{Use of AI assistance}\label{use-of-ai-assistance}}
+
+The prompt stimuli and fictional vendor names were generated with LLM
+assistance (\S6.1). LLM assistance was also used in statistical analysis
+and in drafting this manuscript. All experimental design, hypotheses,
+analysis decisions and conclusions are the author's, who takes full
+responsibility for the content, including any errors.
+
+\hypertarget{acknowledgements}{%
+\section{Acknowledgements}\label{acknowledgements}}
+
+\emph{{[}Independent stimulus authors, once they have consented to be
+named.{]}}
+
+  \bibliography{references}
+
+\end{document}
