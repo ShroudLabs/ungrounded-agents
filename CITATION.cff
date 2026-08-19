@@ -7,7 +7,7 @@ type: software
 authors:
   - given-names: Taran
     family-names: Douley
-    affiliation: Shroud Labs Limited
+    affiliation: Independent Researcher
     orcid: 'https://orcid.org/0009-0002-3673-4500'
 repository-code: 'https://github.com/ShroudLabs/ungrounded-agents'
 abstract: >-
