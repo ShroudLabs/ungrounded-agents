@@ -300,7 +300,7 @@ The prompt stimuli and fictional vendor names were generated with LLM assistance
 
 ## Acknowledgements
 
-
+*[Independent stimulus authors, once they have consented to be named.]*
 
 ---
 
@@ -346,12 +346,12 @@ The prompt stimuli and fictional vendor names were generated with LLM assistance
 
 ## Figures
 
-**Figure 1** (`figures/fig1_decoy_by_condition.pdf`) — Decoy invocation rate via each entity grounding condition across six models. *Placement: §3.4.*
+**Figure 1** (`figures/fig1_decoy_by_condition.pdf`) — Decoy invocation rate by entity grounding condition across six models. Error bars are 95% confidence intervals bootstrapped over prompts. *Placement: §3.4.*
 
-**Figure 2** (`figures/fig2_tool_routing.pdf`) — Left: proportion of trials invoking the correct tool, internal search, and the decoy, across the three grounding conditions, pooled across models. Right: `fetch_url` invocation by entity condition for each model individually. *Placement: §3.5.*
+**Figure 2** (`figures/fig2_tool_routing.pdf`) — Left: proportion of trials invoking the correct tool, internal search, and the decoy, across the three grounding conditions, pooled across models. Right: `fetch_url` invocation by condition for each model individually. *Placement: §3.5.*
 
 **Figure 3** (`figures/fig3_per_prompt.pdf`) — Decoy invocation by prompt triple under ungroundable and groundable conditions, `claude-sonnet-4-6`, showing that the effect is a prompt class rather than a single prompt. *Placement: §3.2 or §3.4.*
 
 **Figure 4** (`figures/fig4_variant_inversion.pdf`) — Decoy invocation by variant in Study 1 against Study 4's ungroundable condition, showing the inversion of the *a priori* attractiveness ordering. *Placement: §5.*
 
-
+*Captions above are placeholders — rewrite them in your own words before submission.*
