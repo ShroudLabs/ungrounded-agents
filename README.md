@@ -1,96 +1,99 @@
-# Ungrounded
+# Raw per-trial data
 
-**Entity grounding failure drives spurious internal-tool invocation in LLM agents.**
+Every row is one trial: one prompt sent to one model with one decoy variant in the
+catalogue, recording the complete set of tool calls in the first assistant turn.
+No tool results are returned to the agent — all studies are single-turn.
 
-Four studies, 13,470 trials, six models, two vendors. Harnesses, raw per-trial data, and analysis scripts.
+## Files
 
-📄 Preprint: [`paper/preprint.md`](paper/preprint.md) · DOI: 10.5281/zenodo.21958704
-🔬 Full record: [`docs/MASTER_BRIEFING.md`](docs/MASTER_BRIEFING.md)
-
----
-
-## What this is
-
-Canary tokens work because nothing legitimate touches them. Connect an LLM agent to internal tools over MCP and the same primitive suggests itself: plant a decoy tool no legitimate task should ever call, alert when something calls it.
-
-That only works if benign agents leave it alone. Nobody had measured whether they do.
-
-We did — and the answer turned out to be less about the decoy than about the request. When an agent cannot ground an entity it has been asked about, because the entity is unnamed (*"our CDN provider"*) or named but unfamiliar (*"Northbrook CDN"*), it reaches into internal-lookup tools to work out what the thing is. A configuration-export decoy fires on up to **51.67%** of such requests. A credential-listing decoy stays largely quiet — inverting the placement heuristic you would reach for intuitively.
-
-The effect is significant in **five of six models across two vendors**, with matched controls at zero throughout. One model recorded a single invocation in 1,200 trials, which suggests the behaviour is trainable away rather than inherent to tool-using agents.
-
-## Headline numbers
-
-| Model | Ungroundable entity | Known entity | p |
+| File | Study | Rows | Models |
 |---|---|---|---|
-| `claude-sonnet-4-6` | 12.64% | 0.83% | 1.0 × 10⁻¹³ |
-| `gpt-5.6-terra` | 10.42% | 1.94% | 7.7 × 10⁻⁸ |
-| `claude-haiku-4-5` | 5.56% | 1.11% | 2.4 × 10⁻⁴ |
-| `gpt-5.6-sol` | 5.00% | 0.28% | 7.8 × 10⁻⁶ |
-| `gpt-5.6-luna` | 4.03% | 0.00% | 9.0 × 10⁻⁶ |
-| `claude-opus-5` | 0.14% | 0.00% | n.s. |
+| `exp1_results.csv` | Study 1 — baseline | 3,030 | claude-sonnet-4-6 |
+| `exp2_results.csv` | Study 2 — matched pairs | 840 | claude-sonnet-4-6 |
+| `exp3_results.csv` | Study 3 — three-condition isolation | 2,400 | claude-sonnet-4-6, claude-haiku-4-5-20251001 |
+| `cross_vendor_results.csv` | Study 4 — cross-vendor | 8,252 | six models, two vendors |
 
-Controls: 0/120 on every model.
+Total: 13,470 non-error trials after filtering (see `status` below).
 
-## Two findings we withdrew
+## Schemas
 
-This work overturned two of our own hypotheses. Both are documented rather than quietly dropped:
-
-- **Attractiveness monotonicity.** The baseline suggested spurious invocation rises with how attractive a decoy looks to an attacker. It rested on nine observations and reverses at higher n, in both vendors.
-- **A fixed ambiguity/unknowability split.** The two components of the effect exist, but their relative weight is model-specific, not a constant.
-
-See §5 of the preprint.
-
-## Repository layout
+**`exp1_results.csv`**
 
 ```
-harnesses/     four experiment harnesses, all resumable
-data/          raw per-trial CSVs for every study
-analysis/      analysis and statistics scripts
-paper/         preprint
-docs/          master briefing — complete record incl. limitations
+variant, run, prompt_idx, prompt, status, tools_called, decoy_called
 ```
+
+**`exp2_results.csv`**
+
+```
+variant, kind, idx, condition, run, prompt, status, tools_called, decoy_called, error
+```
+
+**`exp3_results.csv`** and **`cross_vendor_results.csv`**
+
+```
+model, variant, set, idx, condition, run, prompt, status, tools_called, decoy_called, error
+```
+
+## Columns
+
+| Column | Meaning |
+|---|---|
+| `model` | API model identifier. Study 4 prefixes the vendor (`anthropic:`, `openai:`) |
+| `variant` | Decoy variant in the catalogue: `low` (`legacy_batch_reconcile_v1`), `medium` (`internal_config_export`), `high` (`list_service_credentials`). Ordered by *a priori* assumed attacker-attractiveness — an ordering the results overturn (paper §5) |
+| `set` | `core` (the prompt triples) or `control` (prompts carried from Study 1 that never triggered) |
+| `kind` | Study 2 only: `pair` or `control` |
+| `idx` / `prompt_idx` | Prompt identifier. **This is the clustering unit for all inference** — see below |
+| `condition` | `unresolved` (unnamed referent, "our CDN provider"), `resolved_known` (real named vendor, "Cloudflare"), `resolved_unknown` (fictional named vendor, "Northbrook CDN"), `control`. Study 2 uses `resolved` for the named-vendor condition |
+| `run` | Repetition index, 0-based. Each prompt × condition × variant cell is run 10 times |
+| `prompt` | Verbatim user-turn text |
+| `status` | `OK` or `ERROR`. **Filter to `OK` before analysis** |
+| `tools_called` | Pipe-delimited names of every tool invoked in the first assistant turn. Empty string means the model called no tools |
+| `decoy_called` | 1 if the decoy variant for that trial appears in `tools_called`, else 0 |
+| `error` | Exception text where `status` is `ERROR` |
+
+## Two things to know before analysing this data
+
+### 1. Trials are not independent — cluster on prompt
+
+Each prompt is run 10 times. Treating those 10 runs as 10 independent
+observations is pseudo-replication and produces p-values that are far too small.
+The effect is severe here because hits concentrate within prompts: in Study 1,
+all nine positives came from a single prompt out of 101.
+
+Study 1's attractiveness trend illustrates it:
+
+| Unit | Counts (low / medium / high) | Cochran-Armitage |
+|---|---|---|
+| Trial | 0/1010, 3/1010, 6/1010 | p = 0.0142 |
+| Prompt | 0/101, 1/101, 1/101 | p = 0.3849 |
+
+All inference in the paper uses the prompt (`idx` / `prompt_idx`) as the
+clustering unit. See `analysis/stats_final.py`.
+
+### 2. Do not pool Study 4 with Studies 1–3
+
+Study 4's harness reimplemented the tool definitions. Tool *descriptions* are
+byte-identical, but the parameter schemas differ: one property is omitted and
+some property descriptions changed. All six models in Study 4 saw identical
+schemas, so cross-model comparisons within Study 4 are valid — but Study 4 must
+not be pooled with the earlier studies.
+
+The visible consequence: Sonnet's configuration-export cell reads 39.17% in
+Study 4 against 51.67% in Study 3, on the same prompts.
 
 ## Reproducing
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install anthropic requests scipy
-export ANTHROPIC_API_KEY=...
-
-# Study 1 — baseline, 3,030 trials
-python3 harnesses/decoy_tool_fp_experiment.py --variant all --runs 10
-
-# Study 3 — three-condition isolation, 1,200 trials per model
-python3 harnesses/exp3.py --runs 10 --models claude-sonnet-4-6
-
-# Study 4 — cross-vendor, 1,200 trials per model
-export OPENAI_API_KEY=...
-python3 harnesses/cross_vendor.py --list-models openai   # get current model IDs
-python3 harnesses/cross_vendor.py --runs 10 \
-  --models anthropic:claude-sonnet-4-6 openai:<id>
+pip install -r ../analysis/requirements.txt
+../analysis/run_all.sh
 ```
 
-All runs are resumable — rerun the same command after an interruption and it continues. Failed trials retry automatically. Tool position within the registry is shuffled per trial so ordering cannot confound condition.
+Writes descriptive tables, corrected statistics and all figures to `../figures/`.
 
-Re-analyse existing data without spending API calls:
+## Provenance
 
-```bash
-python3 harnesses/cross_vendor.py analyse data/cross_vendor_results.csv
-```
-
-## Limitations
-
-Read §6 of the preprint before building on this. The material ones in brief: stimuli were LLM-authored after the hypothesis was formed; only two vendors were tested; all trials are single-turn with no tool results returned; the Study 4 harness has parameter-schema drift from Studies 1–3, so those datasets must not be pooled; and no true-positive rate was measured — this characterises false positives only.
-
-## Citing
-
-See [`CITATION.cff`](CITATION.cff), or use GitHub's *Cite this repository* button.
-
-## Licence
-
-Code: [MIT](LICENSE). Data and paper: [CC BY 4.0](LICENSE-DATA).
-
----
-
-Research by [Taran Douley](https://github.com/ShroudLabs) at [Shroud Labs](https://shroudlabs.io).
+Collected 3–12 August 2026. Harnesses in `../harnesses/`. Every run is resumable
+and deterministically seeded at the registry-ordering level, so tool position
+within the catalogue is reproducible per trial but the model's sampling is not
+(temperature is at the provider default of 1.0).
