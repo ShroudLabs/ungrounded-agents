@@ -2,7 +2,7 @@
 
 Every row is one trial: one prompt sent to one model with one decoy variant in the
 catalogue, recording the complete set of tool calls in the first assistant turn.
-No tool results are returned to the agent — all studies are single-turn.
+No tool results are returned to the agent. All studies are single-turn.
 
 ## Files
 
