@@ -16,7 +16,7 @@ We instrument tool selection with a decoy — a tool no legitimate task should e
 
 When an agent cannot ground an entity referenced in a request, because it is unnamed ("our CDN provider") or named but unfamiliar ("Northbrook CDN"), it invokes internal-lookup tools to resolve the entity as a prerequisite sub-goal. Tool-routing data identifies the pathway. The tool that legitimately serves these requests is invoked in 78.1% of trials when the entity is groundable and 5.0% when it is not, with the same gradient in all six models tested. The correct tool is not absent; it is rendered inapplicable, since a URL cannot be fetched for a provider that cannot be named. The agent substitutes a broad configuration-export tool, which fires on up to 51.67% of ungroundable requests.
 
-Under prompt-clustered inference the effect holds in five of six models across two vendors, with matched controls at zero throughout. One model recorded a single invocation in 2,160 ungroundable trials without elevated abstention, routing to legitimate internal search instead — evidence that the behaviour is tractable to training rather than inherent to tool use.
+Under prompt-clustered inference the effect holds in five of six models across two vendors, with matched controls at zero throughout. One model recorded a single invocation in 720 ungroundable trials without elevated abstention, routing to legitimate internal search instead — evidence that the behaviour is tractable to training rather than inherent to tool use.
 
 **Keywords:** LLM agents, tool selection, function calling, agent reliability, abstention, Model Context Protocol
 
@@ -245,7 +245,7 @@ We report three of our own hypotheses that did not survive, and one that we test
 
 **Capability scaling.** Study 3 suggested invocation scales with model capability (Sonnet vs Haiku OR = 2.92). This failed to generalise. Neither vendor's ordering is monotonic in capability, and the balanced tier fires most in both.
 
-**Abstention as the explanation for immunity (tested and rejected).** A natural reading of the `claude-opus-5` result is that it avoids the decoy by declining to act when it cannot ground the entity. This is false. Opus 5 shows a 0.0% zero-tool rate in every condition and averages 2.05 tool calls per trial under ungroundable entities, running `search_docs` in 389 trials and `search_code` in 348. Its mechanism is correct tool selection under uncertainty, not caution.
+**Abstention as the explanation for immunity (tested and rejected).** A natural reading of the `claude-opus-5` result is that it avoids the decoy by declining to act when it cannot ground the entity. This is false. Opus 5 shows a 0.0% zero-tool rate in every condition and averages 2.04 tool calls per trial under ungroundable entities, invoking `search_docs` in 716 of 720 ungroundable trials and `search_code` in 696. Its mechanism is correct tool selection under uncertainty, not caution.
 
 Abstention also fails to explain the cross-model pattern. Zero-tool rates under unnamed referents range from 76.7% (Haiku, which still fires at 5.28%) to 2.2% (Luna, which fires at 0.83%), with `gpt-5.6-terra` abstaining in 4.7% of trials while recording the highest decoy rate at 15.00%. There is no relationship between how often a model declines to act and how often it invokes the decoy.
 
@@ -274,7 +274,7 @@ The recommendations below follow from single-turn invocation data. None of them 
 
 **Evaluation.** Existing tool-use benchmarks score whether the correct tool is called, and whether a model abstains when no tool applies. Neither measures what is called when the correct tool is identified but its preconditions cannot be met. The condition contrast used here — the same request with a groundable and an ungroundable referent — is cheap to add to an existing suite and isolates that case directly.
 
-**Tractability.** `claude-opus-5` recorded one invocation in 2,160 ungroundable trials while showing no elevated abstention, indicating that the behaviour is amenable to training intervention rather than inherent to tool-using agents. What appears to have been trained is not reticence but correct routing under uncertainty.
+**Tractability.** `claude-opus-5` recorded one invocation in 720 ungroundable trials while showing no elevated abstention, indicating that the behaviour is amenable to training intervention rather than inherent to tool-using agents. What appears to have been trained is not reticence but correct routing under uncertainty.
 
 **Decoy placement (security corollary).** Place decoys where they cannot plausibly resolve a sub-goal. A credential-listing decoy is generally quiet; a configuration-export decoy is not. Expect noise wherever agents encounter entities they cannot ground.
 
