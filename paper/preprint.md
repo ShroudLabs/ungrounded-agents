@@ -1,4 +1,4 @@
-# Ungrounded: Entity Grounding Failure Drives Spurious Internal-Tool Invocation in LLM Agents
+# Ungrounded: Entity Grounding Failure Drives Tool Misselection in LLM Agents
 
 **Taran Douley**
 Independent Researcher, United Kingdom
@@ -10,44 +10,42 @@ taran@shroudlabs.io · ORCID: 0009-0002-3673-4500
 
 ## Abstract
 
-Decoy artefacts such as canary tokens and honey accounts are a mature defensive primitive whose value rests on a single property: nothing legitimate touches them. As organisations connect large language model agents to internal tooling via protocols such as MCP, the same primitive suggests itself for agent tool registries. Its viability depends on a false-positive rate that has not been measured.
+Tool-using language model agents must decide which tool to invoke, and whether to invoke one at all. Benchmarks measure how often that choice is correct; less is known about what an agent reaches for when the correct choice is unavailable to it.
 
-We report four studies totalling 13,470 trials. A baseline across 101 benign engineering prompts found low spurious invocation (0.30% and 0.59% for two decoy variants, 0% for a third), but all nine positive trials originated from a single prompt.
+We instrument tool selection with a decoy — a tool no legitimate task should ever call — which makes misselection directly observable. Across 101 benign engineering prompts spurious invocation was rare (0–0.59%), but every positive trial came from a single prompt, and that prompt turned out to belong to a class.
 
-The mechanism we identify is entity grounding failure. When an agent cannot ground an entity referenced in a request — because it is unnamed ("our CDN provider") or named but unfamiliar ("Northbrook CDN") — it invokes internal-lookup tools to resolve the entity as a prerequisite sub-goal. A configuration-export decoy fires on up to 51.67% of such requests; a credential-listing decoy remains largely quiet, inverting the intuitive placement heuristic.
+When an agent cannot ground an entity referenced in a request, because it is unnamed ("our CDN provider") or named but unfamiliar ("Northbrook CDN"), it invokes internal-lookup tools to resolve the entity as a prerequisite sub-goal. Tool-routing data identifies the pathway. The tool that legitimately serves these requests is invoked in 78.1% of trials when the entity is groundable and 5.0% when it is not, with the same gradient in all six models tested. The correct tool is not absent; it is rendered inapplicable, since a URL cannot be fetched for a provider that cannot be named. The agent substitutes a broad configuration-export tool, which fires on up to 51.67% of ungroundable requests.
 
-Tool-routing data identifies the pathway directly. The tool that legitimately serves these requests, `fetch_url`, is invoked in 78.1% of trials when the entity is groundable and 5.0% when it is not, with the same gradient in all six models tested. The decoy does not substitute for a missing capability; it substitutes for a capability rendered unusable, because a URL cannot be fetched for a provider that cannot be named.
+Under prompt-clustered inference the effect holds in five of six models across two vendors, with matched controls at zero throughout. One model recorded a single invocation in 2,160 ungroundable trials without elevated abstention, routing to legitimate internal search instead — evidence that the behaviour is tractable to training rather than inherent to tool use.
 
-Using prompt-clustered inference, the effect is significant in five of six models spanning two vendors, with matched controls at zero throughout. One model, `claude-opus-5`, recorded a single invocation across 2,160 ungroundable trials while showing no elevated abstention — it routes to legitimate internal search instead — indicating the behaviour is tractable to training rather than inherent to tool-using agents.
-
-**Keywords:** LLM agents, Model Context Protocol, tool selection, deception technology, canary tokens, agent reliability
+**Keywords:** LLM agents, tool selection, function calling, agent reliability, abstention, Model Context Protocol
 
 ---
 
 ## 1. Introduction
 
-Canary tokens and honey accounts derive their signal quality from an asymmetry: legitimate users have no reason to touch them, so every alert is real. Thinkst Canary and comparable products are widely deployed on this basis [1].
+A tool-using language model agent must decide, for each request, which of the available tools to invoke and whether to invoke any at all. Existing benchmarks measure how often that decision is correct [13, 17]. Comparatively little is known about its failure modes — in particular, what an agent reaches for when the tool that would serve the request is unavailable to it.
 
-LLM agents connected to internal tools present an analogous opportunity. An agent given a tool registry can be given a decoy tool — one no legitimate task should ever call — providing a tripwire on a surface with minimal existing instrumentation. The precondition is the same asymmetry: benign agents must leave the decoy alone.
+Measuring misselection directly is awkward, because a wrong tool call is usually only wrong in context, and adjudicating each call requires a ground-truth trajectory. We borrow an instrument from a different field to avoid that problem. Canary tokens and honey accounts [1] derive their signal quality from an asymmetry: legitimate users have no reason to touch them, so every alert is real. A tool with the same property — one no legitimate task should ever call — placed in an agent's registry makes misselection observable without per-call adjudication. This paper uses such a decoy tool as a probe.
 
-To our knowledge no measurement of that false-positive rate has been published. This paper provides one, together with an account of why the initial measurement was misleading and what the underlying mechanism turned out to be.
+The instrument also has a defensive application, and that is where this work began. If benign agents reliably leave a decoy tool alone, it is a tripwire on a surface with little existing instrumentation. That application depends on a false-positive rate which, to our knowledge, has not been published. Measuring it produced the reliability result that is the substance of this paper, and a corollary about decoy placement reported in §7.
 
 **Contributions.**
 
-1. A false-positive baseline for decoy tools in an agent tool registry (3,030 trials).
-2. Identification of entity grounding failure as the mechanism driving spurious invocation, with matched-control isolation of two contributing components.
-3. Direct tool-routing evidence for the pathway: the correct tool is used when the entity is groundable and abandoned when it is not.
-4. Cross-vendor replication across six models and two vendors (7,200 trials), under inference clustered on the prompt.
-5. Evidence that one production model does not exhibit the behaviour, and that its immunity is not explained by increased abstention.
+1. Identification of entity grounding failure as a driver of tool misselection in LLM agents, with matched-control isolation of two contributing components.
+2. Direct tool-routing evidence for the pathway: the correct tool is selected when the entity is groundable and abandoned when it is not, in every model tested.
+3. Cross-vendor replication across six models and two vendors (7,200 trials), under inference clustered on the prompt.
+4. Evidence that one production model does not exhibit the behaviour, and that its immunity is not explained by increased abstention.
+5. A false-positive baseline for decoy tools in an agent tool registry (3,030 trials), and the resulting placement corollary.
 6. Retraction of three of our own earlier hypotheses, with the data that overturned them.
 
 ### 1.1 Related work
 
+**Function-calling reliability.** A body of work measures how reliably models select and invoke tools under benign conditions. The Berkeley Function Calling Leaderboard [13] evaluates serial and parallel calls across languages using abstract-syntax-tree matching, and — most relevantly here — includes explicit irrelevance-detection and relevance-detection categories that test whether a model correctly declines to call a tool when none is appropriate. ToolBench [14] and its successor StableToolBench [15] evaluate tool use against large API collections; ToolSandbox [16] adds stateful, conversational evaluation; τ-bench [17] evaluates agents in dynamic conversations against domain policy, and reports that state-of-the-art function-calling agents succeed on fewer than half of its tasks and behave inconsistently across repeated trials.
+
 **Adversarial manipulation of tool registries.** Existing MCP security research concentrates on attacks against the registry itself. Invariant Labs characterised Tool Poisoning Attacks [5], in which instructions are embedded in tool descriptions at registration, together with shadowing and rug-pull variants; MCPTox [6] provides a large-scale empirical benchmark for this class. Wang et al. [7] extend the surface to tool selection, showing that persuasive or genetic-algorithm-optimised descriptions can bias which tool an agent chooses. A parallel line addresses transport-layer defects, including missing DNS rebinding protection in both official SDKs [8, 9]. Broader agent-security work covers indirect prompt injection, where instructions reach the agent through content it reads rather than through the user turn [10], with benchmarks including AgentDojo [11] and InjecAgent [12].
 
-All of this work requires an adversary. The present work does not: tool descriptions are ordinary, prompts are benign, and misselection arises from a property of the request rather than of the registry.
-
-**Function-calling reliability.** A second body of work measures how reliably models select and invoke tools under benign conditions. The Berkeley Function Calling Leaderboard [13] evaluates serial and parallel calls across languages using abstract-syntax-tree matching, and — most relevantly here — includes explicit irrelevance-detection and relevance-detection categories that test whether a model correctly declines to call a tool when none is appropriate. ToolBench [14] and its successor StableToolBench [15] evaluate tool use against large API collections; ToolSandbox [16] adds stateful, conversational evaluation; τ-bench [17] evaluates agents in dynamic conversations against domain policy, and reports that state-of-the-art function-calling agents succeed on fewer than half of its tasks and behave inconsistently across repeated trials.
+All of this work requires an adversary. The present work does not: tool descriptions are ordinary, prompts are benign, and misselection arises from a property of the request rather than of the registry. We use a decoy tool as a measurement instrument, not as a defence.
 
 Our work sits adjacent to this literature but asks a different question. Irrelevance detection asks whether the model abstains when *no relevant tool exists*. We study the case where the relevant tool *does* exist and is correctly identified in the groundable condition, but becomes unusable because a required argument cannot be obtained — and we measure what the model reaches for instead. The failure is therefore not one of tool identification but of behaviour under an unsatisfiable precondition.
 
@@ -272,13 +270,15 @@ Abstention also fails to explain the cross-model pattern. Zero-tool rates under 
 
 The recommendations below follow from single-turn invocation data. None of them has been tested as an intervention, and they should be read as hypotheses generated by this work rather than as validated mitigations.
 
-**Decoy placement.** Place decoys where they cannot plausibly resolve a sub-goal. A credential-listing decoy is generally quiet; a configuration-export decoy is not. Expect noise wherever agents encounter entities they cannot ground.
-
 **Agent tool catalogues.** Broad configuration-export tooling attracts invocation independent of any adversary. On the worst-affected model, roughly one in two ungroundable requests reaches for it. If §4 is correct, the mitigation is to supply what the agent is actually looking for: an explicit entity-resolution tool, gated and audited, rather than leaving internal-inspection tools as the nearest available substitute.
 
-**Detection.** The anomaly is not in the request, the permissions, or the user. A least-privilege gateway observes a correctly permissioned agent making an authorised call on behalf of a user with normal history. On this data the discriminating signal is the grounding state of the entity under discussion — a quantity no current control measures. Whether it can be measured reliably in production is untested.
+**Evaluation.** Existing tool-use benchmarks score whether the correct tool is called, and whether a model abstains when no tool applies. Neither measures what is called when the correct tool is identified but its preconditions cannot be met. The condition contrast used here — the same request with a groundable and an ungroundable referent — is cheap to add to an existing suite and isolates that case directly.
 
 **Tractability.** `claude-opus-5` recorded one invocation in 2,160 ungroundable trials while showing no elevated abstention, indicating that the behaviour is amenable to training intervention rather than inherent to tool-using agents. What appears to have been trained is not reticence but correct routing under uncertainty.
+
+**Decoy placement (security corollary).** Place decoys where they cannot plausibly resolve a sub-goal. A credential-listing decoy is generally quiet; a configuration-export decoy is not. Expect noise wherever agents encounter entities they cannot ground.
+
+**Detection.** The anomaly is not in the request, the permissions, or the user. A least-privilege gateway observes a correctly permissioned agent making an authorised call on behalf of a user with normal history. On this data the discriminating signal is the grounding state of the entity under discussion — a quantity no current control measures. Whether it can be measured reliably in production is untested.
 
 **Next experiment.** The mechanism in §4 predicts that adding a tool which resolves internal vendor references will restore `fetch_url` routing and silence the decoy. This is a direct test and is the natural successor to this work.
 
