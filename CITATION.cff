@@ -9,7 +9,7 @@ authors:
     family-names: Douley
     affiliation: Shroud Labs Limited
     orcid: 'https://orcid.org/0009-0002-3673-4500'
-repository-code: 'https://github.com/ShroudLabs/ungrounded'
+repository-code: 'https://github.com/ShroudLabs/ungrounded-agents'
 abstract: >-
   Harnesses, raw per-trial data and analysis for four studies
   (13,470 trials, six models, two vendors) measuring spurious
