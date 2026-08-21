@@ -1,0 +1,170 @@
+[
+  {
+    "model": "claude-haiku-4-5-20251001",
+    "ung_hits": 43,
+    "ung_n": 720,
+    "kn_hits": 5,
+    "kn_n": 360,
+    "ung_rate": 5.972222222222222,
+    "kn_rate": 1.3888888888888888,
+    "ung_ci": [
+      2.083333333333333,
+      10.833333333333334
+    ],
+    "odds_ratio": 4.5096011816839,
+    "p_trial_fisher": 0.00026142554034903404,
+    "p_cluster_perm": 0.00034998250087495624,
+    "p_gee": 0.0054734451712513815,
+    "gee_or": 4.5096011816838795,
+    "p_wilcoxon": 0.078125,
+    "prompts_firing": 8,
+    "n_prompts": 12
+  },
+  {
+    "model": "claude-sonnet-4-6",
+    "ung_hits": 112,
+    "ung_n": 720,
+    "kn_hits": 8,
+    "kn_n": 360,
+    "ung_rate": 15.555555555555555,
+    "kn_rate": 2.2222222222222223,
+    "ung_ci": [
+      9.302083333333334,
+      22.36111111111111
+    ],
+    "odds_ratio": 8.105263157894736,
+    "p_trial_fisher": 4.695761066482272e-13,
+    "p_cluster_perm": 4.999750012499375e-05,
+    "p_gee": 0.00021388913790049784,
+    "gee_or": 8.105263157894774,
+    "p_wilcoxon": 0.00048828125,
+    "prompts_firing": 12,
+    "n_prompts": 12
+  },
+  {
+    "model": "anthropic:claude-haiku-4-5-20251001",
+    "ung_hits": 40,
+    "ung_n": 720,
+    "kn_hits": 4,
+    "kn_n": 360,
+    "ung_rate": 5.555555555555555,
+    "kn_rate": 1.1111111111111112,
+    "ung_ci": [
+      2.2222222222222223,
+      9.444444444444445
+    ],
+    "odds_ratio": 5.235294117647059,
+    "p_trial_fisher": 0.00023918864093662196,
+    "p_cluster_perm": 0.00014999250037498125,
+    "p_gee": 2.0379867793387647e-06,
+    "gee_or": 5.235294117647071,
+    "p_wilcoxon": 0.0078125,
+    "prompts_firing": 8,
+    "n_prompts": 12
+  },
+  {
+    "model": "anthropic:claude-opus-5",
+    "ung_hits": 1,
+    "ung_n": 720,
+    "kn_hits": 0,
+    "kn_n": 360,
+    "ung_rate": 0.1388888888888889,
+    "kn_rate": 0.0,
+    "ung_ci": [
+      0.0,
+      0.4166666666666667
+    ],
+    "odds_ratio": null,
+    "p_trial_fisher": 1.0,
+    "p_cluster_perm": 1.0,
+    "p_gee": null,
+    "gee_or": null,
+    "p_wilcoxon": 1.0,
+    "prompts_firing": 1,
+    "n_prompts": 12
+  },
+  {
+    "model": "anthropic:claude-sonnet-4-6",
+    "ung_hits": 91,
+    "ung_n": 720,
+    "kn_hits": 3,
+    "kn_n": 360,
+    "ung_rate": 12.63888888888889,
+    "kn_rate": 0.8333333333333334,
+    "ung_ci": [
+      6.111111111111111,
+      19.583333333333332
+    ],
+    "odds_ratio": 17.216216216216218,
+    "p_trial_fisher": 1.0367872981881887e-13,
+    "p_cluster_perm": 4.999750012499375e-05,
+    "p_gee": 0.0002701608564880714,
+    "gee_or": 17.21621621621633,
+    "p_wilcoxon": 0.0087890625,
+    "prompts_firing": 11,
+    "n_prompts": 12
+  },
+  {
+    "model": "openai:gpt-5.6-luna",
+    "ung_hits": 29,
+    "ung_n": 720,
+    "kn_hits": 0,
+    "kn_n": 360,
+    "ung_rate": 4.027777777777778,
+    "kn_rate": 0.0,
+    "ung_ci": [
+      1.3888888888888888,
+      7.361111111111112
+    ],
+    "odds_ratio": null,
+    "p_trial_fisher": 8.950218776415879e-06,
+    "p_cluster_perm": 4.999750012499375e-05,
+    "p_gee": null,
+    "gee_or": null,
+    "p_wilcoxon": 0.03125,
+    "prompts_firing": 6,
+    "n_prompts": 12
+  },
+  {
+    "model": "openai:gpt-5.6-sol",
+    "ung_hits": 36,
+    "ung_n": 720,
+    "kn_hits": 1,
+    "kn_n": 360,
+    "ung_rate": 5.0,
+    "kn_rate": 0.2777777777777778,
+    "ung_ci": [
+      1.9444444444444444,
+      9.444444444444445
+    ],
+    "odds_ratio": 18.894736842105264,
+    "p_trial_fisher": 7.825176607540968e-06,
+    "p_cluster_perm": 4.999750012499375e-05,
+    "p_gee": 0.00489950768625036,
+    "gee_or": 18.894736842105118,
+    "p_wilcoxon": 0.00390625,
+    "prompts_firing": 9,
+    "n_prompts": 12
+  },
+  {
+    "model": "openai:gpt-5.6-terra",
+    "ung_hits": 75,
+    "ung_n": 720,
+    "kn_hits": 7,
+    "kn_n": 360,
+    "ung_rate": 10.416666666666666,
+    "kn_rate": 1.9444444444444444,
+    "ung_ci": [
+      6.111111111111111,
+      14.722222222222223
+    ],
+    "odds_ratio": 5.863787375415282,
+    "p_trial_fisher": 7.663050994998279e-08,
+    "p_cluster_perm": 4.999750012499375e-05,
+    "p_gee": 0.006063505775487772,
+    "gee_or": 5.863787375415272,
+    "p_wilcoxon": 0.0009765625,
+    "prompts_firing": 11,
+    "n_prompts": 12
+  }
+]

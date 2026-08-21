@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 *_mock.csv
 smoke*.csv
+figures/*.png
+figures/*.txt
