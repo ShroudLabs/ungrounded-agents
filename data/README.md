@@ -101,3 +101,7 @@ Collected 3–12 August 2026. Harnesses in `../harnesses/`. Every run is resumab
 and deterministically seeded at the registry-ordering level, so tool position
 within the catalogue is reproducible per trial but the model's sampling is not
 (temperature is at the provider default of 1.0).
+
+The ten-tool catalogue used in every study is also shipped with the
+`ungrounded` package as `examples/tools.json`, so you can run the same
+contrast against a different model without copying it out of the harness.
