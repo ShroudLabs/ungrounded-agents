@@ -1,0 +1,104 @@
+\begin{thebibliography}{14}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Beurer-Kellner and Fischer(2025)]{invariant2025}
+Luca Beurer-Kellner and Marc Fischer.
+\newblock Mcp security notification: Tool poisoning attacks.
+\newblock Invariant Labs, 2025.
+\newblock URL
+  \url{https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks}.
+
+\bibitem[Debenedetti et~al.(2024)Debenedetti, Zhang, Balunovi\'{c},
+  Beurer-Kellner, Fischer, and Tram\`{e}r]{agentdojo2024}
+Edoardo Debenedetti, Jie Zhang, Mislav Balunovi\'{c}, Luca Beurer-Kellner, Marc
+  Fischer, and Florian Tram\`{e}r.
+\newblock Agentdojo: A dynamic environment to evaluate prompt injection attacks
+  and defenses for {LLM} agents.
+\newblock \emph{arXiv preprint arXiv:2406.13352}, 2024.
+
+\bibitem[Greshake et~al.(2023)Greshake, Abdelnabi, Mishra, Endres, Holz, and
+  Fritz]{greshake2023}
+Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten
+  Holz, and Mario Fritz.
+\newblock Not what you've signed up for: Compromising real-world
+  {LLM}-integrated applications with indirect prompt injection.
+\newblock In \emph{Proceedings of the 16th ACM Workshop on Artificial
+  Intelligence and Security}, pages 79--90, 2023.
+
+\bibitem[Guo et~al.(2025)]{stabletoolbench2025}
+Zhicheng Guo et~al.
+\newblock Stabletoolbench: Towards stable large-scale benchmarking on tool
+  learning of large language models.
+\newblock In \emph{Findings of the Association for Computational Linguistics:
+  ACL}, 2025.
+
+\bibitem[Lu et~al.(2025)Lu, Holleis, Zhang, Aumayer, Nan, Bai, Ma, Ma, Li, Yin,
+  Wang, and Pang]{toolsandbox2025}
+Jiarui Lu, Thomas Holleis, Yizhe Zhang, Bernhard Aumayer, Feng Nan, Haoping
+  Bai, Shuang Ma, Shen Ma, Mengyu Li, Guoli Yin, Zirui Wang, and Ruoming Pang.
+\newblock Toolsandbox: A stateful, conversational, interactive evaluation
+  benchmark for {LLM} tool use capabilities.
+\newblock In \emph{Findings of the Association for Computational Linguistics:
+  NAACL 2025}, pages 1160--1183, 2025.
+
+\bibitem[{MCPTox Authors}(2025)]{mcptox2025}
+{MCPTox Authors}.
+\newblock {MCPTox}: A benchmark for tool poisoning attack on real-world {MCP}
+  servers, 2025.
+
+\bibitem[{MITRE}(2025{\natexlab{a}})]{cve202566414}
+{MITRE}.
+\newblock {CVE-2025-66414}: Model context protocol typescript {SDK}, equivalent
+  defect, 2025{\natexlab{a}}.
+\newblock Fixed in 1.24.0.
+
+\bibitem[{MITRE}(2025{\natexlab{b}})]{cve202566416}
+{MITRE}.
+\newblock {CVE-2025-66416}: Model context protocol python {SDK} does not enable
+  {DNS} rebinding protection by default, 2025{\natexlab{b}}.
+\newblock CWE-1188. Fixed in mcp 1.23.0. GHSA-9h52-p55h-vw2f.
+
+\bibitem[Patil et~al.(2025)Patil, Mao, Cheng-Jie~Ji, Yan, Suresh, Stoica, and
+  Gonzalez]{bfcl2025}
+Shishir~G. Patil, Huanzhi Mao, Charlie Cheng-Jie~Ji, Fanjia Yan, Vishnu Suresh,
+  Ion Stoica, and Joseph~E. Gonzalez.
+\newblock The berkeley function calling leaderboard ({BFCL}): From tool use to
+  agentic evaluation of large language models.
+\newblock In \emph{Proceedings of the 42nd International Conference on Machine
+  Learning}, volume 267 of \emph{PMLR}, pages 48371--48392, 2025.
+
+\bibitem[Qin et~al.(2023)]{toolllm2023}
+Yujia Qin et~al.
+\newblock Toolllm: Facilitating large language models to master 16000+
+  real-world apis.
+\newblock \emph{arXiv preprint arXiv:2307.16789}, 2023.
+
+\bibitem[{Thinkst Applied Research}(2026)]{canary}
+{Thinkst Applied Research}.
+\newblock Canary and canarytokens.
+\newblock \url{https://canary.tools}, 2026.
+\newblock Accessed 2026-08-19.
+
+\bibitem[Wang et~al.(2025)]{mpma2025}
+Wang et~al.
+\newblock Mcp preference manipulation attack (mpma).
+\newblock \emph{arXiv preprint arXiv:2505.11154}, 2025.
+
+\bibitem[Yao et~al.(2024)Yao, Shinn, Razavi, and Narasimhan]{taubench2024}
+Shunyu Yao, Noah Shinn, Pedram Razavi, and Karthik Narasimhan.
+\newblock $\tau$-bench: A benchmark for tool-agent-user interaction in
+  real-world domains.
+\newblock \emph{arXiv preprint arXiv:2406.12045}, 2024.
+
+\bibitem[Zhan et~al.(2024)Zhan, Liang, Ying, and Kang]{injecagent2024}
+Qiusi Zhan, Zhixiang Liang, Zifan Ying, and Daniel Kang.
+\newblock Injecagent: Benchmarking indirect prompt injections in
+  tool-integrated large language model agents.
+\newblock In \emph{Findings of the Association for Computational Linguistics:
+  ACL 2024}, pages 10471--10506, 2024.
+
+\end{thebibliography}

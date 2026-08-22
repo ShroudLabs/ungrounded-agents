@@ -5,3 +5,4 @@ __pycache__/
 smoke*.csv
 figures/*.png
 figures/*.txt
+paper/arxiv_source.tar.gz
