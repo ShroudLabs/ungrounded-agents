@@ -1,3 +1,7 @@
+> **Want to measure this on your own agent?** The harness is packaged as an
+> installable eval with a six-model leaderboard:
+> [`pip install ungrounded`](https://github.com/ShroudLabs/ungrounded)
+
 # Raw per-trial data
 
 Every row is one trial: one prompt sent to one model with one decoy variant in the
