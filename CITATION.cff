@@ -22,5 +22,10 @@ keywords:
   - canary tokens
   - tool selection
   - agent security
+references:
+  - type: software
+    title: "ungrounded: an eval for LLM agent tool misselection"
+    repository-code: "https://github.com/ShroudLabs/ungrounded"
+    url: "https://pypi.org/project/ungrounded/"
 license: MIT
 date-released: '2026-08-15'
